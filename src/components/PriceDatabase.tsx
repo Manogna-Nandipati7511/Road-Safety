@@ -1,36 +1,73 @@
 import { useEffect, useState } from 'react';
 import { DollarSign, Search, ExternalLink, TrendingUp, Database } from 'lucide-react';
-import { supabase, PriceReference } from '../lib/supabase';
+
+/* STATIC PRICE DATA (CPWD SOR & GeM – INDICATIVE) */
+type PriceReference = {
+  id: number;
+  material_name: string;
+  specification: string;
+  unit: string;
+  price: number;
+  source: string;
+  document_reference: string;
+  valid_from: string;
+};
+
+const PRICE_DATA: PriceReference[] = [
+  {
+    id: 1,
+    material_name: 'W-Beam Crash Barrier',
+    specification: 'Hot dip galvanized steel, 3 mm thick',
+    unit: 'meter',
+    price: 3500,
+    source: 'CPWD SOR',
+    document_reference: 'CPWD SOR 2024 – Item 11.68',
+    valid_from: '2024-04-01'
+  },
+  {
+    id: 2,
+    material_name: 'Thermoplastic Road Marking',
+    specification: '2.5 mm thick with glass beads',
+    unit: 'sqm',
+    price: 500,
+    source: 'CPWD SOR',
+    document_reference: 'CPWD SOR 2024 – Item 16.42',
+    valid_from: '2024-04-01'
+  },
+  {
+    id: 3,
+    material_name: 'Retro-Reflective Sign Board',
+    specification: 'Type XI micro-prismatic sheeting',
+    unit: 'number',
+    price: 12000,
+    source: 'GeM',
+    document_reference: 'GeM Product ID: GEM/2024/RSB',
+    valid_from: '2024-06-01'
+  },
+  {
+    id: 4,
+    material_name: 'Speed Breaker',
+    specification: 'Prefabricated rubber / asphalt type',
+    unit: 'number',
+    price: 30000,
+    source: 'CPWD SOR',
+    document_reference: 'CPWD SOR 2024 – Item 17.25',
+    valid_from: '2024-04-01'
+  }
+];
 
 export default function PriceDatabase() {
   const [prices, setPrices] = useState<PriceReference[]>([]);
   const [filteredPrices, setFilteredPrices] = useState<PriceReference[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSource, setSelectedSource] = useState('all');
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchPrices();
+    setPrices(PRICE_DATA);
+    setFilteredPrices(PRICE_DATA);
   }, []);
 
   useEffect(() => {
-    filterPrices();
-  }, [searchQuery, selectedSource, prices]);
-
-  const fetchPrices = async () => {
-    const { data, error } = await supabase
-      .from('price_references')
-      .select('*')
-      .order('material_name', { ascending: true });
-
-    if (!error && data) {
-      setPrices(data);
-      setFilteredPrices(data);
-    }
-    setLoading(false);
-  };
-
-  const filterPrices = () => {
     let filtered = prices;
 
     if (selectedSource !== 'all') {
@@ -40,31 +77,21 @@ export default function PriceDatabase() {
     if (searchQuery) {
       filtered = filtered.filter(p =>
         p.material_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.specification?.toLowerCase().includes(searchQuery.toLowerCase())
+        p.specification.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
     setFilteredPrices(filtered);
-  };
+  }, [searchQuery, selectedSource, prices]);
 
   const sources = Array.from(new Set(prices.map(p => p.source)));
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
+  const formatCurrency = (amount: number) =>
+    new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR',
       maximumFractionDigits: 0
     }).format(amount);
-  };
-
-  if (loading) {
-    return (
-      <div className="bg-white rounded-xl shadow-lg p-8 text-center border border-gray-200">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto"></div>
-        <p className="mt-4 text-gray-600">Loading price database...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
@@ -74,41 +101,44 @@ export default function PriceDatabase() {
         </div>
         <div>
           <h2 className="text-xl font-bold text-gray-800">Material Price Database</h2>
-          <p className="text-sm text-gray-600">Current rates from CPWD SOR and GeM portal</p>
+          <p className="text-sm text-gray-600">
+            Indicative material rates from CPWD SOR & GeM
+          </p>
         </div>
       </div>
 
       <div className="mb-6 space-y-4">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search materials or specifications..."
-            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+            placeholder="Search materials..."
+            className="w-full pl-10 pr-4 py-3 border rounded-lg"
           />
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex gap-2">
           <button
             onClick={() => setSelectedSource('all')}
-            className={`px-4 py-2 rounded-lg font-medium transition-all ${
+            className={`px-4 py-2 rounded-lg ${
               selectedSource === 'all'
-                ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white shadow-md'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-orange-500 text-white'
+                : 'bg-gray-100'
             }`}
           >
             All Sources
           </button>
+
           {sources.map(source => (
             <button
               key={source}
               onClick={() => setSelectedSource(source)}
-              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+              className={`px-4 py-2 rounded-lg ${
                 selectedSource === source
-                  ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-orange-500 text-white'
+                  : 'bg-gray-100'
               }`}
             >
               {source}
@@ -117,30 +147,19 @@ export default function PriceDatabase() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-        <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-sm text-green-700 font-medium">Total Materials</p>
-            <TrendingUp className="w-5 h-5 text-green-600" />
-          </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="bg-green-50 border rounded-lg p-4">
+          <p className="text-sm text-green-700">Total Materials</p>
           <p className="text-3xl font-bold text-green-600">{prices.length}</p>
         </div>
-
-        <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-sm text-blue-700 font-medium">CPWD SOR Items</p>
-            <DollarSign className="w-5 h-5 text-blue-600" />
-          </div>
+        <div className="bg-blue-50 border rounded-lg p-4">
+          <p className="text-sm text-blue-700">CPWD SOR Items</p>
           <p className="text-3xl font-bold text-blue-600">
             {prices.filter(p => p.source === 'CPWD SOR').length}
           </p>
         </div>
-
-        <div className="bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-4">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-sm text-purple-700 font-medium">GeM Portal Items</p>
-            <ExternalLink className="w-5 h-5 text-purple-600" />
-          </div>
+        <div className="bg-purple-50 border rounded-lg p-4">
+          <p className="text-sm text-purple-700">GeM Items</p>
           <p className="text-3xl font-bold text-purple-600">
             {prices.filter(p => p.source === 'GeM').length}
           </p>
@@ -148,67 +167,34 @@ export default function PriceDatabase() {
       </div>
 
       <div className="space-y-3">
-        {filteredPrices.length === 0 ? (
-          <div className="text-center py-12">
-            <Database className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">No materials found</p>
-            <p className="text-gray-400 text-sm mt-2">Try adjusting your search or filters</p>
-          </div>
-        ) : (
-          filteredPrices.map(price => (
-            <div
-              key={price.id}
-              className="bg-gradient-to-r from-gray-50 to-yellow-50 rounded-lg p-4 border border-gray-200 hover:shadow-md transition-all"
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <h3 className="font-bold text-gray-800 text-lg">{price.material_name}</h3>
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      price.source === 'CPWD SOR'
-                        ? 'bg-blue-100 text-blue-700'
-                        : 'bg-purple-100 text-purple-700'
-                    }`}>
-                      {price.source}
-                    </span>
-                  </div>
-                  {price.specification && (
-                    <p className="text-sm text-gray-600 mb-2">{price.specification}</p>
-                  )}
-                  <div className="flex items-center space-x-4 text-sm text-gray-500">
-                    <span className="font-medium">{price.document_reference}</span>
-                    <span>•</span>
-                    <span>Valid from {new Date(price.valid_from).toLocaleDateString('en-IN')}</span>
-                  </div>
-                </div>
-                <div className="text-right ml-4">
-                  <p className="text-3xl font-bold text-orange-600">
-                    {formatCurrency(price.price)}
-                  </p>
-                  <p className="text-sm text-gray-500">per {price.unit}</p>
-                </div>
+        {filteredPrices.map(price => (
+          <div
+            key={price.id}
+            className="bg-gray-50 border rounded-lg p-4"
+          >
+            <div className="flex justify-between">
+              <div>
+                <h3 className="font-bold">{price.material_name}</h3>
+                <p className="text-sm text-gray-600">{price.specification}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {price.document_reference}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-2xl font-bold text-orange-600">
+                  {formatCurrency(price.price)}
+                </p>
+                <p className="text-xs text-gray-500">per {price.unit}</p>
               </div>
             </div>
-          ))
-        )}
+          </div>
+        ))}
       </div>
 
-      <div className="mt-6 bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-lg p-4">
-        <h4 className="font-semibold text-orange-800 mb-2">Data Sources</h4>
-        <div className="space-y-2 text-sm">
-          <div className="flex items-center space-x-2">
-            <ExternalLink className="w-4 h-4 text-blue-600" />
-            <span className="text-gray-700">
-              <strong>CPWD SOR:</strong> Central Public Works Department Schedule of Rates
-            </span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <ExternalLink className="w-4 h-4 text-purple-600" />
-            <span className="text-gray-700">
-              <strong>GeM Portal:</strong> Government e-Marketplace for procurement
-            </span>
-          </div>
-        </div>
+      <div className="mt-6 bg-orange-50 border rounded-lg p-4">
+        <h4 className="font-semibold mb-2">Data Sources</h4>
+        <p className="text-sm">• CPWD Schedule of Rates</p>
+        <p className="text-sm">• Government e-Marketplace (GeM)</p>
       </div>
     </div>
   );

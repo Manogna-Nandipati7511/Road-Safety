@@ -1,40 +1,83 @@
 import { useEffect, useState } from 'react';
 import { BookOpen, Search, Tag, FileText } from 'lucide-react';
-import { supabase, IRCStandard } from '../lib/supabase';
+
+/* STATIC IRC STANDARDS DATA */
+type IRCStandard = {
+  id: number;
+  standard_code: string;
+  title: string;
+  material_category: string;
+  clause_number: string;
+  specification?: string;
+  content?: string;
+};
+
+const IRC_DATA: IRCStandard[] = [
+  {
+    id: 1,
+    standard_code: 'IRC 35',
+    title: 'Code of Practice for Road Markings',
+    material_category: 'Road Markings',
+    clause_number: '3.2',
+    specification: 'Thermoplastic road markings with glass beads',
+    content: 'Provides specifications for longitudinal and transverse road markings.'
+  },
+  {
+    id: 2,
+    standard_code: 'IRC 67',
+    title: 'Code of Practice for Road Signs',
+    material_category: 'Road Signs',
+    clause_number: '6.1',
+    specification: 'Retro-reflective sign boards (Type XI sheeting)',
+    content: 'Defines standards for regulatory, warning and informatory signs.'
+  },
+  {
+    id: 3,
+    standard_code: 'IRC 99',
+    title: 'Guidelines for Traffic Calming Measures',
+    material_category: 'Traffic Calming',
+    clause_number: '5.4',
+    specification: 'Speed breakers, rumble strips',
+    content: 'Guidelines for speed control in urban and rural roads.'
+  },
+  {
+    id: 4,
+    standard_code: 'IRC:SP:84',
+    title: 'Manual of Road Safety Audit',
+    material_category: 'Road Safety Audit',
+    clause_number: '4.3',
+    specification: 'Audit procedure and checklist',
+    content: 'Provides systematic approach for conducting road safety audits.'
+  },
+  {
+    id: 5,
+    standard_code: 'IRC:SP:87',
+    title: 'Road Safety Furniture',
+    material_category: 'Safety Barriers',
+    clause_number: '7.2',
+    specification: 'W-beam crash barriers, guard rails',
+    content: 'Specifications for crash barriers, pedestrian railings and safety furniture.'
+  }
+];
 
 export default function IRCStandards() {
   const [standards, setStandards] = useState<IRCStandard[]>([]);
   const [filteredStandards, setFilteredStandards] = useState<IRCStandard[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchStandards();
+    setStandards(IRC_DATA);
+    setFilteredStandards(IRC_DATA);
   }, []);
 
   useEffect(() => {
-    filterStandards();
-  }, [searchQuery, selectedCategory, standards]);
-
-  const fetchStandards = async () => {
-    const { data, error } = await supabase
-      .from('irc_standards')
-      .select('*')
-      .order('standard_code', { ascending: true });
-
-    if (!error && data) {
-      setStandards(data);
-      setFilteredStandards(data);
-    }
-    setLoading(false);
-  };
-
-  const filterStandards = () => {
     let filtered = standards;
 
     if (selectedCategory !== 'all') {
-      filtered = filtered.filter(s => s.material_category === selectedCategory);
+      filtered = filtered.filter(
+        s => s.material_category === selectedCategory
+      );
     }
 
     if (searchQuery) {
@@ -46,18 +89,11 @@ export default function IRCStandards() {
     }
 
     setFilteredStandards(filtered);
-  };
+  }, [searchQuery, selectedCategory, standards]);
 
-  const categories = Array.from(new Set(standards.map(s => s.material_category)));
-
-  if (loading) {
-    return (
-      <div className="bg-white rounded-xl shadow-lg p-8 text-center border border-gray-200">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto"></div>
-        <p className="mt-4 text-gray-600">Loading IRC standards...</p>
-      </div>
-    );
-  }
+  const categories = Array.from(
+    new Set(standards.map(s => s.material_category))
+  );
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
@@ -66,42 +102,47 @@ export default function IRCStandards() {
           <BookOpen className="w-6 h-6 text-white" />
         </div>
         <div>
-          <h2 className="text-xl font-bold text-gray-800">IRC Standards Reference</h2>
-          <p className="text-sm text-gray-600">Indian Roads Congress specifications and guidelines</p>
+          <h2 className="text-xl font-bold text-gray-800">
+            IRC Standards Reference
+          </h2>
+          <p className="text-sm text-gray-600">
+            Indian Roads Congress specifications and guidelines
+          </p>
         </div>
       </div>
 
       <div className="mb-6 space-y-4">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search standards, titles, or specifications..."
-            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+            placeholder="Search IRC standards..."
+            className="w-full pl-10 pr-4 py-3 border rounded-lg"
           />
         </div>
 
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setSelectedCategory('all')}
-            className={`px-4 py-2 rounded-lg font-medium transition-all ${
+            className={`px-4 py-2 rounded-lg ${
               selectedCategory === 'all'
-                ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-md'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-purple-500 text-white'
+                : 'bg-gray-100'
             }`}
           >
-            All Categories
+            All
           </button>
+
           {categories.map(category => (
             <button
               key={category}
               onClick={() => setSelectedCategory(category)}
-              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+              className={`px-4 py-2 rounded-lg ${
                 selectedCategory === category
-                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-purple-500 text-white'
+                  : 'bg-gray-100'
               }`}
             >
               {category}
@@ -110,81 +151,42 @@ export default function IRCStandards() {
         </div>
       </div>
 
-      <div className="space-y-3">
-        {filteredStandards.length === 0 ? (
-          <div className="text-center py-12">
-            <BookOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">No standards found</p>
-            <p className="text-gray-400 text-sm mt-2">Try adjusting your search or filters</p>
-          </div>
-        ) : (
-          filteredStandards.map(standard => (
-            <div
-              key={standard.id}
-              className="bg-gradient-to-r from-gray-50 to-purple-50 rounded-lg p-4 border border-gray-200 hover:shadow-md transition-all"
-            >
-              <div className="flex items-start justify-between mb-2">
-                <div className="flex items-center space-x-3">
-                  <div className="bg-purple-500 text-white px-3 py-1 rounded-lg font-bold text-sm">
-                    {standard.standard_code}
-                  </div>
-                  <div className="bg-pink-100 text-pink-700 px-3 py-1 rounded-full text-xs font-semibold flex items-center space-x-1">
-                    <Tag className="w-3 h-3" />
-                    <span>{standard.material_category}</span>
-                  </div>
-                </div>
-                <div className="text-xs text-gray-500 font-medium">
-                  Clause {standard.clause_number}
-                </div>
-              </div>
-
-              <h3 className="font-semibold text-gray-800 mb-2">{standard.title}</h3>
-
-              {standard.specification && (
-                <div className="bg-blue-50 border border-blue-200 rounded p-3 mb-2">
-                  <p className="text-xs font-semibold text-blue-800 mb-1">Specification</p>
-                  <p className="text-sm text-blue-700">{standard.specification}</p>
-                </div>
-              )}
-
-              {standard.content && (
-                <div className="bg-gray-50 border border-gray-200 rounded p-3">
-                  <p className="text-xs font-semibold text-gray-700 mb-1 flex items-center space-x-1">
-                    <FileText className="w-3 h-3" />
-                    <span>Content</span>
-                  </p>
-                  <p className="text-sm text-gray-600">{standard.content}</p>
-                </div>
-              )}
+      <div className="space-y-4">
+        {filteredStandards.map(standard => (
+          <div
+            key={standard.id}
+            className="bg-gray-50 border rounded-lg p-4"
+          >
+            <div className="flex justify-between mb-2">
+              <span className="font-bold text-purple-600">
+                {standard.standard_code}
+              </span>
+              <span className="text-xs text-gray-500">
+                Clause {standard.clause_number}
+              </span>
             </div>
-          ))
-        )}
-      </div>
 
-      <div className="mt-6 bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-lg p-4">
-        <h4 className="font-semibold text-blue-800 mb-2">IRC Standards Covered</h4>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <div className="bg-white rounded-lg p-3 border border-blue-200">
-            <p className="font-bold text-blue-600">IRC 35</p>
-            <p className="text-xs text-gray-600">Road Markings</p>
+            <h3 className="font-semibold mb-2">{standard.title}</h3>
+
+            <div className="flex items-center text-xs mb-2">
+              <Tag className="w-3 h-3 mr-1" />
+              {standard.material_category}
+            </div>
+
+            {standard.specification && (
+              <p className="text-sm text-gray-700">
+                <b>Specification:</b> {standard.specification}
+              </p>
+            )}
+
+            {standard.content && (
+              <p className="text-sm text-gray-600 mt-1">
+                <FileText className="w-3 h-3 inline mr-1" />
+                {standard.content}
+              </p>
+            )}
           </div>
-          <div className="bg-white rounded-lg p-3 border border-blue-200">
-            <p className="font-bold text-blue-600">IRC 67</p>
-            <p className="text-xs text-gray-600">Safety Barriers</p>
-          </div>
-          <div className="bg-white rounded-lg p-3 border border-blue-200">
-            <p className="font-bold text-blue-600">IRC 99</p>
-            <p className="text-xs text-gray-600">Traffic Signs</p>
-          </div>
-          <div className="bg-white rounded-lg p-3 border border-blue-200">
-            <p className="font-bold text-blue-600">IRC:SP:84</p>
-            <p className="text-xs text-gray-600">Speed Breakers</p>
-          </div>
-          <div className="bg-white rounded-lg p-3 border border-blue-200">
-            <p className="font-bold text-blue-600">IRC:SP:87</p>
-            <p className="text-xs text-gray-600">Pedestrian Safety</p>
-          </div>
-        </div>
+        ))}
       </div>
     </div>
   );
