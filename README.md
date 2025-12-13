@@ -3,4 +3,4 @@ The Road Safety Monitoring System is a web-based application developed using mod
 The main objective of this system is to create an easy-to-use and interactive platform that helps users learn important road rules and encourages responsible driving behavior. The project aims to display common traffic violations along with their consequences, offer detailed traffic sign information, improve safety awareness, and ultimately contribute to reducing road accidents.
 
 The project is built using modern technologies. On the frontend, React, Vite, Tailwind CSS, and TypeScript are used to create a responsive, visually appealing, and smooth user experience. The backend is developed using Node.js and Express.js, which handle traffic-related API requests and connect the frontend to server-side logic. Version control is managed through Git and GitHub for collaborative development and project tracking.
-local host :  https://manogna-nandipati7511.github.io/Road-Safety/
+local host :  https://dainty-snickerdoodle-a293b5.netlify.app/
